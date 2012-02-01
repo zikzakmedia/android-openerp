@@ -1,0 +1,111 @@
+OpenErpConnect is a connector to access OpenERP servers from Android devices.
+=============================================================================
+
+It is distributed under the terms of the GNU Lesser General Public License. You can extend it and add
+extra functionality, if needed for your apps.
+This connector depends on the library android-xmlrpc, which can be found in http://code.google.com/p/android-xmlrpc/
+This forum page inspired the creation of OpenErpConnect: http://www.openerp.com/forum/topic15581.html
+
+Here are some examples on how to use it, (for more information see the source and its comments):
+
+// Useful tips:
+- Python dictionaries {} are mapped into HashMap Java objects and vice versa, so if you have to pass a dictionary to a WS, put the info in a HashMap.
+- Python lists [] and tuples () can be treated in Java width arrays and Lists (Vector and ArrayList implementations work well)
+- If you want to know which is the actual type of an Object to cast it properly, you can use getClass() and getName() as:
+objectInstance.getClass().getName()
+- To cast an Object[] array into another type of array use the Arrays.copyOf() method, or you will probably get a ClassCastException
+- In case that an Exception occurred or there are no results, null is returned. So, if the returned object by OpenErpConnect is not null, it will
+contain, at less, one value. There is an exception for this width the methods that return a Boolean. In which case null is not returned,
+we use false instead for more "logical" reasons.
+
+// Login:
+Connecting to the OpenERP server and getting a OpenErpConnect instance for successive calls.
+This does the login and stores the connection information into the instance, so you
+do not have to pass them every time:
+OpenErpConnect oc = OpenErpConnect.connect("localhost", 8051, "my_db", "username", "user_pass");
+
+// Create:
+HashMap<String, String> values = new HashMap<String, String>(); // If you need different types use HashMap<String, Object>
+values.put("name", "partner name");
+HashMap<String, String> context = new HashMap<String, String>();
+context.put("lang", "es_ES");
+Integer partnerId = oc.create("res.partner", values, context); // context can be null, it is not needed
+
+// Search examples, width full support for "Pythonic" conditions, but width Java syntax:
+Integer[] ids = oc.search("res.partner", new Object[0]); // Returns all the ids as the conditions varargs is empty
+Integer[] ids = oc.search("res.partner", "|", new Object[] {"name", "=", "Enric"}, new Object[] {"name", "!=", "ZZ"});
+
+// Simple Read: reading partner names:
+List<HashMap<String, Object>> list = oc.read("res.partner", new Integer[] {1, 2, 3}, new String[] {"name"});
+String result = "";
+for (HashMap<String, Object> item : list) {
+    result += (String)item.get("name")+"\n";
+}
+
+// Complex Read of related objects: reading partners and addresses (as you will see, you always will use the same approach to work width related fields):
+String result = "";
+List<HashMap<String, Object>> partners = oc.read("res.partner", new Integer[] {1, 2, 3}, new String[] {"id", "name", "address"});
+for (HashMap<String, Object> partner : partners) {
+    result += (Integer)partner.get("id") + " " + (String)partner.get("name") + " ";
+    Object[] addressObjects = (Object[])partner.get("address");
+    if (addressObjects.length > 0) {
+        Integer[] addresses = Arrays.copyOf(addressObjects, addressObjects.length, Integer[].class);
+        List<HashMap<String, Object>> addressInfoList = oc.read("res.partner.address", addresses, new String[] {"street", "zip", "country_id"});
+        for (HashMap<String, Object> addressInfo : addressInfoList) {
+            String street = (String)addressInfo.get("street");
+            String zip = (String)addressInfo.get("zip");
+            Object[] countryIdObjects = (Object[])addressInfo.get("country_id");
+            result += "street " + street + " zip " + zip + " country " + countryIdObjects[0] + " " + countryIdObjects[1] + " ";
+        }
+    }
+    result += "\n";
+}
+
+// Simple write:
+HashMap<String, String> values = new HashMap<String, String>();
+values.put("name", "category 2");
+HashMap<String, String> context = new HashMap<String, String>();
+context.put("lang", "es_ES");
+Boolean writeOk = oc.write("res.partner.category", new Integer[] {2}, values, context);
+
+// More complex write width Partner and Category m2m:
+HashMap<String, Object> values = new HashMap<String, Object>();
+values.put("category_id", new Object[] {new Object[] {6, 0, new Object[] {1, 3}}});
+Boolean writeOk = oc.write("res.partner", new Integer[] {62}, values, null);
+
+// Unlink:
+Boolean unlinkOk = oc.unlink("res.partner", new Integer[] {54, 55});
+
+Note that in the examples so far we use newly created array for ids, but we can use the result of a previous search, for example:
+Integer[] idsToUnlink = oc.search("res.partner", new Object[] {"name", "=", "ZZ"});
+Boolean unlinkOk = oc.unlink("res.partner", idsToUnlink);
+Or even:
+Boolean unlinkOk = oc.unlink("res.partner", oc.search("res.partner", new Object[] {"name", "=", "ZZ"})); // Be careful if null is returned by search()
+
+// Browse:
+List<ResPartner> resultList = new ArrayList<ResPartner>();
+oc.browse("res.partner", ResPartner.class, new Integer[] {45, 55}, ResPartner.getAtrributeNames(), resultList);
+String result = "";
+for (ResPartner partner : resultList) {
+    result += partner.toString()+"\n";
+}
+
+In order for this browse to work we created the following example class:
+public class ResPartner {
+    
+    private String mName; // Just for testing, we work width one attribute
+    
+    public ResPartner(HashMap<String, ?> values) { // The public constructor width a HashMap parameter is obligatory
+        mName = (String)values.get("name");
+    }
+
+    public static List<String> getAtrributeNames() { // This is highly recommended to do not hardcode the list of attributes to retrieve
+        List<String> attributeNames = new ArrayList<String>(1);
+        attributeNames.add("name");
+        return attributeNames;
+    }
+    
+    public String toString() {
+        return mName;
+    }
+}
