@@ -18,8 +18,6 @@
  * 
  */
 
-package com.caumons.testing.openerpconnect;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
