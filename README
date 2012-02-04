@@ -10,12 +10,12 @@ Here are some examples on how to use it, (for more information see the source an
 
 // Useful tips:
 - Python dictionaries {} are mapped into HashMap Java objects and vice versa, so if you have to pass a dictionary to a WS, put the info in a HashMap.
-- Python lists [] and tuples () can be treated in Java width arrays and Lists (Vector and ArrayList implementations work well)
+- Python lists [] and tuples () can be treated in Java with arrays and Lists (Vector and ArrayList implementations work well)
 - If you want to know which is the actual type of an Object to cast it properly, you can use getClass() and getName() as:
 objectInstance.getClass().getName()
 - To cast an Object[] array into another type of array use the Arrays.copyOf() method, or you will probably get a ClassCastException
 - In case that an Exception occurred or there are no results, null is returned. So, if the returned object by OpenErpConnect is not null, it will
-contain, at less, one value. There is an exception for this width the methods that return a Boolean. In which case null is not returned,
+contain, at less, one value. There is an exception for this with the methods that return a Boolean. In which case null is not returned,
 we use false instead for more "logical" reasons.
 
 // Login:
@@ -31,7 +31,7 @@ HashMap<String, String> context = new HashMap<String, String>();
 context.put("lang", "es_ES");
 Integer partnerId = oc.create("res.partner", values, context); // context can be null, it is not needed
 
-// Search examples, width full support for "Pythonic" conditions, but width Java syntax:
+// Search examples, with full support for "Pythonic" conditions, but with Java syntax:
 Integer[] ids = oc.search("res.partner", new Object[0]); // Returns all the ids as the conditions varargs is empty
 Integer[] ids = oc.search("res.partner", "|", new Object[] {"name", "=", "Enric"}, new Object[] {"name", "!=", "ZZ"});
 
@@ -42,7 +42,7 @@ for (HashMap<String, Object> item : list) {
     result += (String)item.get("name")+"\n";
 }
 
-// Complex Read of related objects: reading partners and addresses (as you will see, you always will use the same approach to work width related fields):
+// Complex Read of related objects: reading partners and addresses (as you will see, you always will use the same approach to work with related fields):
 String result = "";
 List<HashMap<String, Object>> partners = oc.read("res.partner", new Integer[] {1, 2, 3}, new String[] {"id", "name", "address"});
 for (HashMap<String, Object> partner : partners) {
@@ -68,7 +68,7 @@ HashMap<String, String> context = new HashMap<String, String>();
 context.put("lang", "es_ES");
 Boolean writeOk = oc.write("res.partner.category", new Integer[] {2}, values, context);
 
-// More complex write width Partner and Category m2m:
+// More complex write with Partner and Category m2m:
 HashMap<String, Object> values = new HashMap<String, Object>();
 values.put("category_id", new Object[] {new Object[] {6, 0, new Object[] {1, 3}}});
 Boolean writeOk = oc.write("res.partner", new Integer[] {62}, values, null);
@@ -93,9 +93,9 @@ for (ResPartner partner : resultList) {
 In order for this browse to work we created the following example class:
 public class ResPartner {
     
-    private String mName; // Just for testing, we work width one attribute
+    private String mName; // Just for testing, we work with one attribute
     
-    public ResPartner(HashMap<String, ?> values) { // The public constructor width a HashMap parameter is obligatory
+    public ResPartner(HashMap<String, ?> values) { // The public constructor with a HashMap parameter is obligatory
         mName = (String)values.get("name");
     }
 

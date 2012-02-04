@@ -18,6 +18,8 @@
  * 
  */
 
+package com.caumons.testing.openerpconnect;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -56,6 +58,7 @@ public class OpenErpConnect {
     protected URL mUrl;
     
     protected static final String CONECTOR_NAME = "OpenErpConnect";
+    protected static OpenErpConnect sConnectionInstance = null; // Singleton class
     
     protected OpenErpConnect(String server, Integer port, String db, String user, String pass, Integer id) throws MalformedURLException {
         mServer = server;
@@ -68,7 +71,16 @@ public class OpenErpConnect {
     }
     
     public static OpenErpConnect connect(String server, Integer port, String db, String user, String pass) {
-        /* Returns an OpenErpConnect instance, which you will use to call the methods. */
+        /* Returns an OpenErpConnect instance, which you will use to call the methods, and stores it as a static object. */
+        sConnectionInstance = login(server, port, db, user, pass);
+        return sConnectionInstance;
+    }
+    
+    public static Boolean testConnection(String server, Integer port, String db, String user, String pass) {
+        return login(server, port, db, user, pass) != null;
+    }
+    
+    protected static OpenErpConnect login(String server, Integer port, String db, String user, String pass) {
         OpenErpConnect connection = null;
         try {
             URL loginUrl = new URL("http", server, port, "/xmlrpc/common");
@@ -83,9 +95,17 @@ public class OpenErpConnect {
         return connection;
     }
     
+    public static OpenErpConnect getConnectionInstance() {
+        return sConnectionInstance;
+    }
+    
+    public static Boolean isConnected() {
+        return sConnectionInstance != null;
+    }
+    
     public Integer create(String model, HashMap<String, ?> values, HashMap<String, ?> context) {
         /*
-         * Creates a new record for the given model width the values supplied, if
+         * Creates a new record for the given model with the values supplied, if
          * you do not need the context, just pass null for it.
          * Remember: In order to add different types in a Collection use Object, e.g.
          * HashMap<String, Object> values = new HashMap<String, Object>();
@@ -186,7 +206,7 @@ public class OpenErpConnect {
     }
     
     public Boolean unlink(String model, Integer[] ids) {
-        /* A method to delete the matching records width the ids given*/
+        /* A method to delete the matching records with the ids given*/
         
         Boolean unlinkOk = false;
         try {
@@ -203,14 +223,14 @@ public class OpenErpConnect {
          * The result is stored in the parameter List<E> resultList. The parameter
          * modelClass should look like: MyClass.class Do not expect
          * to use it as in the native method. You will not jump from one model to
-         * another just accessing the foreign field! But it is easier to work width
+         * another just accessing the foreign field! But it is easier to work with
          * E instances than HashMaps ;)
          * The class E MUST define a public constructor with one parameter of type HashMap,
-         * which will initialize the attributes width the values inside the
-         * Hashmap width the keys corresponding to the fields supplied.
+         * which will initialize the attributes with the values inside the
+         * Hashmap with the keys corresponding to the fields supplied.
          * It is recommended no to hardcode the fields, instead, program a public
          * static method such as getAtrributeNames() in E that returns a List<String>
-         * width the attribute names in the OpenERP table, which match the
+         * with the attribute names in the OpenERP table, which match the
          * attributes defined in the class.
          * You can extend classes and call the parent's getAtrributeNames() to
          * add() the new attributes (as it is a List<String>). Also, you can call
