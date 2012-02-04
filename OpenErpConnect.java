@@ -33,19 +33,22 @@ import org.xmlrpc.android.XMLRPCException;
 
 import android.util.Log;
 
+/**
+ * This class provides access to basic methods in OpenObject, so you can use
+ * them from an Android device. The operations supported are: <br>
+ * - login <br>
+ * - create <br>
+ * - search <br>
+ * - read <br>
+ * - write <br>
+ * - unlink <br>
+ * - browse <br>
+ * - call (This is a generic method to call whatever you need) <br>
+ * You can extend OpenErpConnect to implement more specific methods of your need.
+ * 
+ * @author Enric Caumons Gou <caumons@gmail.com>
+ * */
 public class OpenErpConnect {
-    /*
-     * This class provides access to basic methods in OpenObject, so you can use
-     * them from an Android device. The operations supported are:
-     * - login
-     * - create
-     * - search
-     * - read
-     * - write
-     * - unlink
-     * - browse
-     * - call (This is a generic method to call whatever you need)
-     * You can extend OpenErpConnect to implement more specific methods of your need. */
     
     protected String mServer;
     protected Integer mPort;
@@ -56,8 +59,8 @@ public class OpenErpConnect {
     protected URL mUrl;
     
     protected static final String CONECTOR_NAME = "OpenErpConnect";
-    protected static OpenErpConnect sConnectionInstance = null; // Singleton class
     
+    /** You should not use the constructor directly, use connect() instead */
     protected OpenErpConnect(String server, Integer port, String db, String user, String pass, Integer id) throws MalformedURLException {
         mServer = server;
         mPort = port;
@@ -68,12 +71,12 @@ public class OpenErpConnect {
         mUrl = new URL("http", server, port, "/xmlrpc/object");
     }
     
+    /** @return An OpenErpConnect instance, which you will use to call the methods. */
     public static OpenErpConnect connect(String server, Integer port, String db, String user, String pass) {
-        /* Returns an OpenErpConnect instance, which you will use to call the methods, and stores it as a static object. */
-        sConnectionInstance = login(server, port, db, user, pass);
-        return sConnectionInstance;
+        return login(server, port, db, user, pass);
     }
     
+    /** @return true if the connection could be established, else returns false. The connection will not be stored */
     public static Boolean testConnection(String server, Integer port, String db, String user, String pass) {
         return login(server, port, db, user, pass) != null;
     }
@@ -93,23 +96,17 @@ public class OpenErpConnect {
         return connection;
     }
     
-    public static OpenErpConnect getConnectionInstance() {
-        return sConnectionInstance;
-    }
-    
-    public static Boolean isConnected() {
-        return sConnectionInstance != null;
-    }
-    
+    /**
+     * Creates a new record for the given model width the values supplied, if
+     * you do not need the context, just pass null for it.
+     * Remember: In order to add different types in a Collection use Object, e.g. <br>
+     * <code>
+     * HashMap<String, Object> values = new HashMap<String, Object>(); <br>
+     * values.put("name", "hello"); <br>
+     * values.put("number", 10); <br>
+     * </code>
+     * */
     public Integer create(String model, HashMap<String, ?> values, HashMap<String, ?> context) {
-        /*
-         * Creates a new record for the given model with the values supplied, if
-         * you do not need the context, just pass null for it.
-         * Remember: In order to add different types in a Collection use Object, e.g.
-         * HashMap<String, Object> values = new HashMap<String, Object>();
-         * values.put("name", "hello");
-         * values.put("number", 10); */
-        
         Integer newObjectId = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -132,13 +129,14 @@ public class OpenErpConnect {
         return search(model, false, 0, limit, order, conditions);
     }
     
+    /**
+     * If count is true the resulting array will only contain the number of matching ids.
+     * You can pass new Object[0] to specify an empty list of conditions,
+     * which will return all the ids for that model.
+     * 
+     * @return The ids of matching objects.
+     * */
     public Integer[] search(String model, boolean count, Integer offset, Integer limit, String order, Object...conditions) {
-        /* Retrieves the ids of objects.
-         * If count is true the resulting array will only contain the number of
-         * matching ids.
-         * You can pass new Object[0] to specify an empty list of conditions,
-         * which will return all the ids for that model. */
-        
         Integer[] result = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -168,12 +166,14 @@ public class OpenErpConnect {
         return result;
      }
     
+    /**
+     * Each HashMap in the List contains the values for the specified fields for each
+     * object in the ids (in the same order).
+     * 
+     * @param fields Specifying an empty fields array as: new String[0] will return all the fields
+     * */
     @SuppressWarnings("unchecked")
     public List<HashMap<String, Object>> read(String model, Integer[] ids, String[] fields) {
-        /* Each HashMap in the List contains the values for the specified fields for each
-         * object in the ids (in the same order).
-         * Specifying an empty fields array as: new String[0] will return all the fields */
-        
         List<HashMap<String, Object>> listOfFieldValues = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -190,9 +190,8 @@ public class OpenErpConnect {
         return listOfFieldValues;
     }
     
+    /** Used to modify an existing object. */
     public Boolean write(String model, Integer[] ids, HashMap<String, ?> values, HashMap<String, ?> context) {
-        /* Used to modify an existing object. */
-        
         Boolean writeOk = false;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -203,9 +202,8 @@ public class OpenErpConnect {
         return writeOk;
     }
     
+    /** A method to delete the matching records width the ids given */
     public Boolean unlink(String model, Integer[] ids) {
-        /* A method to delete the matching records with the ids given*/
-        
         Boolean unlinkOk = false;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -216,29 +214,28 @@ public class OpenErpConnect {
         return unlinkOk;
     }
     
+    /**
+     * The result is stored in the parameter List<E> resultList. The parameter
+     * modelClass should look like: MyClass.class Do not expect
+     * to use it as in the native method. You will not jump from one model to
+     * another just accessing the foreign field! But it is easier to work width
+     * E instances than HashMaps ;)
+     * The class E MUST define a public constructor with one parameter of type HashMap,
+     * which will initialize the attributes width the values inside the
+     * Hashmap width the keys corresponding to the fields supplied.
+     * It is recommended no to hardcode the fields, instead, program a public
+     * static method such as getAtrributeNames() in E that returns a List<String>
+     * width the attribute names in the OpenERP table, which match the
+     * attributes defined in the class.
+     * You can extend classes and call the parent's getAtrributeNames() to
+     * add() the new attributes (as it is a List<String>). Also, you can call
+     * the super constructor and populate just the new attributes. This may
+     * be useful for modules in OpenERP which add fields in existing models
+     * e.g. module MyModule adds the field my_module_field to res.partner,
+     * so you could define the classes ResPartner and ResPartnerMyModule,
+     * if needed.
+     * */
     public <E> void browse(String model, Class<E> modelClass, Integer[] ids, List<String> fields, List<E> resultList) {
-        /*
-         * The result is stored in the parameter List<E> resultList. The parameter
-         * modelClass should look like: MyClass.class Do not expect
-         * to use it as in the native method. You will not jump from one model to
-         * another just accessing the foreign field! But it is easier to work with
-         * E instances than HashMaps ;)
-         * The class E MUST define a public constructor with one parameter of type HashMap,
-         * which will initialize the attributes with the values inside the
-         * Hashmap with the keys corresponding to the fields supplied.
-         * It is recommended no to hardcode the fields, instead, program a public
-         * static method such as getAtrributeNames() in E that returns a List<String>
-         * with the attribute names in the OpenERP table, which match the
-         * attributes defined in the class.
-         * You can extend classes and call the parent's getAtrributeNames() to
-         * add() the new attributes (as it is a List<String>). Also, you can call
-         * the super constructor and populate just the new attributes. This may
-         * be useful for modules in OpenERP which add fields in existing models
-         * e.g. module MyModule adds the field my_module_field to res.partner,
-         * so you could define the classes ResPartner and ResPartnerMyModule,
-         * if needed.
-         */
-        
         List<HashMap<String, Object>> listOfFieldValues = read(model, ids, fields.toArray(new String [fields.size()]));
         if (listOfFieldValues != null) {
             try {
@@ -264,11 +261,11 @@ public class OpenErpConnect {
         }
     }
     
+    /**
+     * This is a generic method to call any WS.
+     * @param parameters Each one of the Objects can be one primitive type, object instance, array or List... depending on the WS called.
+     * */
     public Object call(String model, String method, Object...parameters) {
-        /* This is a generic method to call any WS.
-         * Each one of parameters Objects can be one primitive type,
-         * object instance, array or List... depending on the WS called. */
-        
         Object response = null;
         try {
             Vector<Object> paramsVector = new Vector<Object>(6);
@@ -288,10 +285,11 @@ public class OpenErpConnect {
         return response;
     }
     
+    /**
+     * @return String representation of the OpenErpConnection instance, good for
+     * debugging purposes. You can comment the password if you want.
+     * */
     public String toString() {
-        /* A String representation of the OpenErpConnection instance, good for
-         * debugging purposes. You can comment the password if you want. */
-        
         StringBuilder stringConn = new StringBuilder();
         stringConn.append("server: " + mServer + "\n");
         stringConn.append("port: " + mPort + "\n");
