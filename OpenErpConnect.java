@@ -31,6 +31,7 @@ import java.util.Vector;
 import org.xmlrpc.android.XMLRPCClient;
 import org.xmlrpc.android.XMLRPCException;
 
+import android.content.ContentValues;
 import android.util.Log;
 
 /**
@@ -55,7 +56,7 @@ public class OpenErpConnect {
     protected String mDatabase;
     protected String mUser;
     protected String mPassword; // Stored as a raw String
-    protected Integer mId;
+    protected Integer mUserId;
     protected URL mUrl;
     
     protected static final String CONECTOR_NAME = "OpenErpConnect";
@@ -67,7 +68,7 @@ public class OpenErpConnect {
         mDatabase = db;
         mUser = user;
         mPassword = pass;
-        mId = id;
+        mUserId = id;
         mUrl = new URL("http", server, port, "/xmlrpc/object");
     }
     
@@ -76,9 +77,23 @@ public class OpenErpConnect {
         return login(server, port, db, user, pass);
     }
     
+    public static OpenErpConnect connect(ContentValues connectionParams) {
+        return login(connectionParams);
+    }
+    
     /** @return true if the connection could be established, else returns false. The connection will not be stored */
     public static Boolean testConnection(String server, Integer port, String db, String user, String pass) {
         return login(server, port, db, user, pass) != null;
+    }
+    
+    public static Boolean testConnection(ContentValues connectionParams) {
+        return login(connectionParams) != null;
+    }
+    
+    protected static OpenErpConnect login(ContentValues connectionParams) {
+        return login(connectionParams.getAsString("server"), connectionParams.getAsInteger("port"),
+                connectionParams.getAsString("database"), connectionParams.getAsString("username"),
+                connectionParams.getAsString("password"));
     }
     
     protected static OpenErpConnect login(String server, Integer port, String db, String user, String pass) {
@@ -86,12 +101,14 @@ public class OpenErpConnect {
         try {
             URL loginUrl = new URL("http", server, port, "/xmlrpc/common");
             XMLRPCClient client = new XMLRPCClient(loginUrl);
-            Integer id = (Integer)client.call("login", "oerp6_training", "admin", "admin");
+            Integer id = (Integer)client.call("login", db, user, pass);
             connection = new OpenErpConnect(server, port, db, user, pass, id);
         } catch (XMLRPCException e) {
             Log.d(CONECTOR_NAME, e.toString());
         } catch (MalformedURLException e) {
             Log.d(CONECTOR_NAME, e.toString());
+        } catch (ClassCastException e) {
+            Log.d(CONECTOR_NAME, e.toString()); // Bad login or password
         }
         return connection;
     }
@@ -110,7 +127,7 @@ public class OpenErpConnect {
         Integer newObjectId = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
-            newObjectId = (Integer)client.call("execute", mDatabase, mId, mPassword, model, "create", values, context);
+            newObjectId = (Integer)client.call("execute", mDatabase, mUserId, mPassword, model, "create", values, context);
         } catch (XMLRPCException e) {
             Log.d(CONECTOR_NAME, e.toString());
         }
@@ -142,7 +159,7 @@ public class OpenErpConnect {
             XMLRPCClient client = new XMLRPCClient(mUrl);
             Vector<Object> parameters = new Vector<Object>(11);
             parameters.add(mDatabase);
-            parameters.add(mId);
+            parameters.add(mUserId);
             parameters.add(mPassword);
             parameters.add(model);
             parameters.add("search");
@@ -177,7 +194,7 @@ public class OpenErpConnect {
         List<HashMap<String, Object>> listOfFieldValues = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
-            Object[] responseFields = (Object[])client.call("execute", mDatabase, mId, mPassword, model, "read", ids, fields);
+            Object[] responseFields = (Object[])client.call("execute", mDatabase, mUserId, mPassword, model, "read", ids, fields);
             if (responseFields.length > 0) {
                 listOfFieldValues = new ArrayList<HashMap<String, Object>>(responseFields.length);
                 for (Object objectFields : responseFields) {
@@ -195,7 +212,7 @@ public class OpenErpConnect {
         Boolean writeOk = false;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
-            writeOk = (Boolean)client.call("execute", mDatabase, mId, mPassword, model, "write", ids, values, context);
+            writeOk = (Boolean)client.call("execute", mDatabase, mUserId, mPassword, model, "write", ids, values, context);
         } catch (XMLRPCException e) {
             Log.d(CONECTOR_NAME, e.toString());
         }
@@ -207,7 +224,7 @@ public class OpenErpConnect {
         Boolean unlinkOk = false;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
-            unlinkOk = (Boolean)client.call("execute", mDatabase, mId, mPassword, model, "unlink", ids);
+            unlinkOk = (Boolean)client.call("execute", mDatabase, mUserId, mPassword, model, "unlink", ids);
         } catch (XMLRPCException e) {
             Log.d(CONECTOR_NAME, e.toString());
         }
@@ -270,7 +287,7 @@ public class OpenErpConnect {
         try {
             Vector<Object> paramsVector = new Vector<Object>(6);
             paramsVector.add(mDatabase);
-            paramsVector.add(mId);
+            paramsVector.add(mUserId);
             paramsVector.add(mPassword);
             paramsVector.add(model);
             paramsVector.add(method);
@@ -296,7 +313,8 @@ public class OpenErpConnect {
         stringConn.append("database: " + mDatabase + "\n");
         stringConn.append("user: " + mUser + "\n");
         stringConn.append("password: " + mPassword + "\n");
-        stringConn.append("id: " + mId + "\n");
+        stringConn.append("id: " + mUserId + "\n");
         return stringConn.toString();
     }
 }
+
