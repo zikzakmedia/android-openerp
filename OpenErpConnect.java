@@ -54,19 +54,19 @@ public class OpenErpConnect {
     protected String mServer;
     protected Integer mPort;
     protected String mDatabase;
-    protected String mUser;
-    protected String mPassword; // Stored as a raw String
+    protected String mUserName;
+    protected String mPassword;
     protected Integer mUserId;
     protected URL mUrl;
     
-    protected static final String CONECTOR_NAME = "OpenErpConnect";
+    protected static final String CONNECTOR_NAME = "OpenErpConnect";
     
     /** You should not use the constructor directly, use connect() instead */
     protected OpenErpConnect(String server, Integer port, String db, String user, String pass, Integer id) throws MalformedURLException {
         mServer = server;
         mPort = port;
         mDatabase = db;
-        mUser = user;
+        mUserName = user;
         mPassword = pass;
         mUserId = id;
         mUrl = new URL("http", server, port, "/xmlrpc/object");
@@ -104,11 +104,11 @@ public class OpenErpConnect {
             Integer id = (Integer)client.call("login", db, user, pass);
             connection = new OpenErpConnect(server, port, db, user, pass, id);
         } catch (XMLRPCException e) {
-            Log.d(CONECTOR_NAME, e.toString());
+            Log.d(CONNECTOR_NAME, e.toString());
         } catch (MalformedURLException e) {
-            Log.d(CONECTOR_NAME, e.toString());
+            Log.d(CONNECTOR_NAME, e.toString());
         } catch (ClassCastException e) {
-            Log.d(CONECTOR_NAME, e.toString()); // Bad login or password
+            Log.d(CONNECTOR_NAME, e.toString()); // Bad login or password
         }
         return connection;
     }
@@ -129,20 +129,20 @@ public class OpenErpConnect {
             XMLRPCClient client = new XMLRPCClient(mUrl);
             newObjectId = (Integer)client.call("execute", mDatabase, mUserId, mPassword, model, "create", values, context);
         } catch (XMLRPCException e) {
-            Log.d(CONECTOR_NAME, e.toString());
+            Log.d(CONNECTOR_NAME, e.toString());
         }
         return newObjectId;
     }
     
-    public Integer[] search(String model, Object...conditions) {
+    public Integer[] search(String model, Object[] conditions) {
         return search(model, false, 0, 0, null, conditions);
     }
     
-    public Integer[] search(String model, boolean count, Object...conditions) {
+    public Integer[] search(String model, boolean count, Object[] conditions) {
         return search(model, false, 0, 0, null, conditions);
     }
     
-    public Integer[] search(String model, boolean count, Integer limit, String order, Object...conditions) {
+    public Integer[] search(String model, boolean count, Integer limit, String order, Object[] conditions) {
         return search(model, false, 0, limit, order, conditions);
     }
     
@@ -153,7 +153,7 @@ public class OpenErpConnect {
      * 
      * @return The ids of matching objects.
      * */
-    public Integer[] search(String model, boolean count, Integer offset, Integer limit, String order, Object...conditions) {
+    public Integer[] search(String model, boolean count, Integer offset, Integer limit, String order, Object[] conditions) {
         Integer[] result = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -163,7 +163,7 @@ public class OpenErpConnect {
             parameters.add(mPassword);
             parameters.add(model);
             parameters.add("search");
-            parameters.add((conditions.length == 1 && conditions[0] instanceof Object[] && ((Object[])conditions[0]).length == 0) ? conditions[0] : conditions);
+            parameters.add(conditions);
             parameters.add(offset);
             parameters.add(limit);
             parameters.add(order);
@@ -173,12 +173,13 @@ public class OpenErpConnect {
                 result = new Integer[] { (Integer)client.call("execute", parameters) };
             } else { // Returning the list of matching item id's
                 Object[] responseIds = (Object[])client.call("execute", parameters);
-                if (responseIds.length > 0) {
-                    result = Arrays.copyOf(responseIds, responseIds.length, Integer[].class); // Converting from Object[] to Integer[]
-                }
+                // In case no matching records were found, an empty list is returned by the ws
+                result = Arrays.copyOf(responseIds, responseIds.length, Integer[].class); // Converting from Object[] to Integer[]
             }
         } catch (XMLRPCException e) {
-            Log.d(CONECTOR_NAME, e.toString());
+            Log.d(CONNECTOR_NAME, e.toString());
+        } catch (NullPointerException e) {
+            Log.d(CONNECTOR_NAME, e.toString()); // Null response (should not happen)
         }
         return result;
      }
@@ -202,7 +203,7 @@ public class OpenErpConnect {
                 }
             }
         } catch (XMLRPCException e) {
-            Log.d(CONECTOR_NAME, e.toString());
+            Log.d(CONNECTOR_NAME, e.toString());
         }
         return listOfFieldValues;
     }
@@ -214,7 +215,7 @@ public class OpenErpConnect {
             XMLRPCClient client = new XMLRPCClient(mUrl);
             writeOk = (Boolean)client.call("execute", mDatabase, mUserId, mPassword, model, "write", ids, values, context);
         } catch (XMLRPCException e) {
-            Log.d(CONECTOR_NAME, e.toString());
+            Log.d(CONNECTOR_NAME, e.toString());
         }
         return writeOk;
     }
@@ -226,7 +227,7 @@ public class OpenErpConnect {
             XMLRPCClient client = new XMLRPCClient(mUrl);
             unlinkOk = (Boolean)client.call("execute", mDatabase, mUserId, mPassword, model, "unlink", ids);
         } catch (XMLRPCException e) {
-            Log.d(CONECTOR_NAME, e.toString());
+            Log.d(CONNECTOR_NAME, e.toString());
         }
         return unlinkOk;
     }
@@ -261,17 +262,17 @@ public class OpenErpConnect {
                     resultList.add(constructor.newInstance(objectHashmap));
                 }
             } catch (SecurityException e) {
-                Log.d(CONECTOR_NAME, e.toString());
+                Log.d(CONNECTOR_NAME, e.toString());
             } catch (NoSuchMethodException e) {
-                Log.d(CONECTOR_NAME, e.toString());
+                Log.d(CONNECTOR_NAME, e.toString());
             } catch (IllegalArgumentException e) {
-                Log.d(CONECTOR_NAME, e.toString());
+                Log.d(CONNECTOR_NAME, e.toString());
             } catch (InstantiationException e) {
-                Log.d(CONECTOR_NAME, e.toString());
+                Log.d(CONNECTOR_NAME, e.toString());
             } catch (IllegalAccessException e) {
-                Log.d(CONECTOR_NAME, e.toString());
+                Log.d(CONNECTOR_NAME, e.toString());
             } catch (InvocationTargetException e) {
-                Log.d(CONECTOR_NAME, e.toString());
+                Log.d(CONNECTOR_NAME, e.toString());
             }
         } else {
             resultList = null;
@@ -297,7 +298,7 @@ public class OpenErpConnect {
             XMLRPCClient client = new XMLRPCClient(mUrl);
             response = client.call("execute", paramsVector);
         } catch (XMLRPCException e) {
-            Log.d(CONECTOR_NAME, e.toString());
+            Log.d(CONNECTOR_NAME, e.toString());
         }
         return response;
     }
@@ -311,10 +312,9 @@ public class OpenErpConnect {
         stringConn.append("server: " + mServer + "\n");
         stringConn.append("port: " + mPort + "\n");
         stringConn.append("database: " + mDatabase + "\n");
-        stringConn.append("user: " + mUser + "\n");
+        stringConn.append("user: " + mUserName + "\n");
         stringConn.append("password: " + mPassword + "\n");
         stringConn.append("id: " + mUserId + "\n");
         return stringConn.toString();
     }
 }
-

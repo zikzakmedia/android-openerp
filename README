@@ -33,7 +33,7 @@ Integer partnerId = oc.create("res.partner", values, context); // context can be
 
 // Search examples, with full support for "Pythonic" conditions, but with Java syntax:
 Integer[] ids = oc.search("res.partner", new Object[0]); // Returns all the ids as the conditions varargs is empty
-Integer[] ids = oc.search("res.partner", "|", new Object[] {"name", "=", "Enric"}, new Object[] {"name", "!=", "ZZ"});
+Integer[] ids = oc.search("res.partner", new Object[] {"|", new Object[] {"name", "=", "Enric"}, new Object[] {"name", "!=", "ZZ"}});
 
 // Simple Read: reading partner names:
 List<HashMap<String, Object>> list = oc.read("res.partner", new Integer[] {1, 2, 3}, new String[] {"name"});
@@ -77,7 +77,7 @@ Boolean writeOk = oc.write("res.partner", new Integer[] {62}, values, null);
 Boolean unlinkOk = oc.unlink("res.partner", new Integer[] {54, 55});
 
 Note that in the examples so far we use newly created array for ids, but we can use the result of a previous search, for example:
-Integer[] idsToUnlink = oc.search("res.partner", new Object[] {"name", "=", "ZZ"});
+Integer[] idsToUnlink = oc.search("res.partner", new Object[] {new Object[] {"name", "=", "ZZ"}});
 Boolean unlinkOk = oc.unlink("res.partner", idsToUnlink);
 Or even:
 Boolean unlinkOk = oc.unlink("res.partner", oc.search("res.partner", new Object[] {"name", "=", "ZZ"})); // Be careful if null is returned by search()
