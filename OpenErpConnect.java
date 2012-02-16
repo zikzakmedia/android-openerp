@@ -23,7 +23,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
@@ -123,26 +122,26 @@ public class OpenErpConnect {
      * values.put("number", 10); <br>
      * </code>
      * */
-    public Integer create(String model, HashMap<String, ?> values, HashMap<String, ?> context) {
-        Integer newObjectId = null;
+    public Long create(String model, HashMap<String, ?> values, HashMap<String, ?> context) {
+        Long newObjectId = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
-            newObjectId = (Integer)client.call("execute", mDatabase, mUserId, mPassword, model, "create", values, context);
+            newObjectId = ((Integer)client.call("execute", mDatabase, mUserId, mPassword, model, "create", values, context)).longValue();
         } catch (XMLRPCException e) {
             Log.d(CONNECTOR_NAME, e.toString());
         }
         return newObjectId;
     }
     
-    public Integer[] search(String model, Object[] conditions) {
+    public Long[] search(String model, Object[] conditions) {
         return search(model, false, 0, 0, null, conditions);
     }
     
-    public Integer[] search(String model, boolean count, Object[] conditions) {
+    public Long[] search(String model, boolean count, Object[] conditions) {
         return search(model, false, 0, 0, null, conditions);
     }
     
-    public Integer[] search(String model, boolean count, Integer limit, String order, Object[] conditions) {
+    public Long[] search(String model, boolean count, Integer limit, String order, Object[] conditions) {
         return search(model, false, 0, limit, order, conditions);
     }
     
@@ -153,8 +152,8 @@ public class OpenErpConnect {
      * 
      * @return The ids of matching objects.
      * */
-    public Integer[] search(String model, boolean count, Integer offset, Integer limit, String order, Object[] conditions) {
-        Integer[] result = null;
+    public Long[] search(String model, boolean count, Integer offset, Integer limit, String order, Object[] conditions) {
+        Long[] result = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
             Vector<Object> parameters = new Vector<Object>(11);
@@ -170,11 +169,15 @@ public class OpenErpConnect {
             parameters.add(null);
             parameters.add(count);
             if (count) { // We just want the number of items
-                result = new Integer[] { (Integer)client.call("execute", parameters) };
+                result = new Long[] { ((Integer)client.call("execute", parameters)).longValue() };
             } else { // Returning the list of matching item id's
                 Object[] responseIds = (Object[])client.call("execute", parameters);
                 // In case no matching records were found, an empty list is returned by the ws
-                result = Arrays.copyOf(responseIds, responseIds.length, Integer[].class); // Converting from Object[] to Integer[]
+                // The ids are returned as Integer, but we want Long for better Android compatibility
+                result = new Long[responseIds.length];
+                for (int i = 0; i < responseIds.length; i++) {
+                    result[i] = ((Integer)responseIds[i]).longValue();
+                }
             }
         } catch (XMLRPCException e) {
             Log.d(CONNECTOR_NAME, e.toString());
@@ -191,7 +194,7 @@ public class OpenErpConnect {
      * @param fields Specifying an empty fields array as: new String[0] will return all the fields
      * */
     @SuppressWarnings("unchecked")
-    public List<HashMap<String, Object>> read(String model, Integer[] ids, String[] fields) {
+    public List<HashMap<String, Object>> read(String model, Long[] ids, String[] fields) {
         List<HashMap<String, Object>> listOfFieldValues = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -209,7 +212,7 @@ public class OpenErpConnect {
     }
     
     /** Used to modify an existing object. */
-    public Boolean write(String model, Integer[] ids, HashMap<String, ?> values, HashMap<String, ?> context) {
+    public Boolean write(String model, Long[] ids, HashMap<String, ?> values, HashMap<String, ?> context) {
         Boolean writeOk = false;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -221,7 +224,7 @@ public class OpenErpConnect {
     }
     
     /** A method to delete the matching records width the ids given */
-    public Boolean unlink(String model, Integer[] ids) {
+    public Boolean unlink(String model, Long[] ids) {
         Boolean unlinkOk = false;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -253,7 +256,7 @@ public class OpenErpConnect {
      * so you could define the classes ResPartner and ResPartnerMyModule,
      * if needed.
      * */
-    public <E> void browse(String model, Class<E> modelClass, Integer[] ids, List<String> fields, List<E> resultList) {
+    public <E> void browse(String model, Class<E> modelClass, Long[] ids, List<String> fields, List<E> resultList) {
         List<HashMap<String, Object>> listOfFieldValues = read(model, ids, fields.toArray(new String [fields.size()]));
         if (listOfFieldValues != null) {
             try {
