@@ -134,15 +134,15 @@ public class OpenErpConnect {
     }
     
     public Long[] search(String model, Object[] conditions) {
-        return search(model, false, 0, 0, null, conditions);
+        return search(model, false, 0, 0, null, false, conditions);
     }
     
     public Long[] search(String model, boolean count, Object[] conditions) {
-        return search(model, false, 0, 0, null, conditions);
+        return search(model, false, 0, 0, null, false, conditions);
     }
     
-    public Long[] search(String model, boolean count, Integer limit, String order, Object[] conditions) {
-        return search(model, false, 0, limit, order, conditions);
+    public Long[] search(String model, boolean count, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
+        return search(model, false, 0, limit, order, reverseOrder, conditions);
     }
     
     /**
@@ -152,7 +152,7 @@ public class OpenErpConnect {
      * 
      * @return The ids of matching objects.
      * */
-    public Long[] search(String model, boolean count, Integer offset, Integer limit, String order, Object[] conditions) {
+    public Long[] search(String model, boolean count, Integer offset, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
         Long[] result = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -177,6 +177,9 @@ public class OpenErpConnect {
                 result = new Long[responseIds.length];
                 for (int i = 0; i < responseIds.length; i++) {
                     result[i] = ((Integer)responseIds[i]).longValue();
+                }
+                if (reverseOrder) {
+                    reverseArray(result);
                 }
             }
         } catch (XMLRPCException e) {
@@ -307,6 +310,22 @@ public class OpenErpConnect {
     }
     
     /**
+     * This utility method reverses the order of the Long elements (ids) in the array. Used to implement
+     * reverse ordering. */
+    public void reverseArray(Long[] array) {
+        int minIndex = 0;
+        int maxIndex = array.length-1;
+        long minValue;
+        while (minIndex < maxIndex) {
+            minValue = array[minIndex];
+            array[minIndex] = array[maxIndex];
+            array[maxIndex] = minValue;
+            minIndex++;
+            maxIndex--;
+        }
+    }
+    
+    /**
      * @return String representation of the OpenErpConnection instance, good for
      * debugging purposes. You can comment the password if you want.
      * */
@@ -321,3 +340,4 @@ public class OpenErpConnect {
         return stringConn.toString();
     }
 }
+
