@@ -137,11 +137,11 @@ public class OpenErpConnect {
         return search(model, false, 0, 0, null, false, conditions);
     }
     
-    public Long[] search(String model, boolean count, Object[] conditions) {
+    public Long[] search(String model, Boolean count, Object[] conditions) {
         return search(model, false, 0, 0, null, false, conditions);
     }
     
-    public Long[] search(String model, boolean count, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
+    public Long[] search(String model, Boolean count, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
         return search(model, false, 0, limit, order, reverseOrder, conditions);
     }
     
@@ -152,7 +152,7 @@ public class OpenErpConnect {
      * 
      * @return The ids of matching objects.
      * */
-    public Long[] search(String model, boolean count, Integer offset, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
+    public Long[] search(String model, Boolean count, Integer offset, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
         Long[] result = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
@@ -202,11 +202,9 @@ public class OpenErpConnect {
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
             Object[] responseFields = (Object[])client.call("execute", mDatabase, mUserId, mPassword, model, "read", ids, fields);
-            if (responseFields.length > 0) {
-                listOfFieldValues = new ArrayList<HashMap<String, Object>>(responseFields.length);
-                for (Object objectFields : responseFields) {
-                    listOfFieldValues.add((HashMap<String, Object>)objectFields);
-                }
+            listOfFieldValues = new ArrayList<HashMap<String, Object>>(responseFields.length);
+            for (Object objectFields : responseFields) {
+                listOfFieldValues.add((HashMap<String, Object>)objectFields);
             }
         } catch (XMLRPCException e) {
             Log.d(CONNECTOR_NAME, e.toString());
@@ -258,36 +256,47 @@ public class OpenErpConnect {
      * e.g. module MyModule adds the field my_module_field to res.partner,
      * so you could define the classes ResPartner and ResPartnerMyModule,
      * if needed.
+     * You can pass extras, which in turn will be received by the Class constructor
+     * in the form of "extra_0", "extra_1"... in the HashMap
      * */
-    public <E> void browse(String model, Class<E> modelClass, Long[] ids, List<String> fields, List<E> resultList) {
+    public <E> void browse(String model, Class<E> modelClass, Long[] ids, List<String> fields, List<E> resultList, Object...extras) throws OpenErpConnectException {
         List<HashMap<String, Object>> listOfFieldValues = read(model, ids, fields.toArray(new String [fields.size()]));
         if (listOfFieldValues != null) {
             try {
                 Constructor<E> constructor = modelClass.getConstructor(HashMap.class);
                 for (HashMap<String, Object> objectHashmap : listOfFieldValues) {
+                    for (int numParam = 0; numParam < extras.length; numParam++) {
+                        objectHashmap.put("extra_"+numParam, extras[numParam]);
+                    }
                     resultList.add(constructor.newInstance(objectHashmap));
                 }
             } catch (SecurityException e) {
                 Log.d(CONNECTOR_NAME, e.toString());
+                throw new OpenErpConnectException(e.toString());
             } catch (NoSuchMethodException e) {
                 Log.d(CONNECTOR_NAME, e.toString());
+                throw new OpenErpConnectException(e.toString());
             } catch (IllegalArgumentException e) {
                 Log.d(CONNECTOR_NAME, e.toString());
+                throw new OpenErpConnectException(e.toString());
             } catch (InstantiationException e) {
                 Log.d(CONNECTOR_NAME, e.toString());
+                throw new OpenErpConnectException(e.toString());
             } catch (IllegalAccessException e) {
                 Log.d(CONNECTOR_NAME, e.toString());
+                throw new OpenErpConnectException(e.toString());
             } catch (InvocationTargetException e) {
                 Log.d(CONNECTOR_NAME, e.toString());
+                throw new OpenErpConnectException(e.toString());
             }
         } else {
-            resultList = null;
+            throw new OpenErpConnectException(OpenErpConnectException.ERROR_READ);
         }
     }
     
     /**
      * This is a generic method to call any WS.
-     * @param parameters Each one of the Objects can be one primitive type, object instance, array or List... depending on the WS called.
+     * @param parameters Each one of the Objects can be one object instance, array or List... depending on the WS called.
      * */
     public Object call(String model, String method, Object...parameters) {
         Object response = null;
@@ -339,5 +348,27 @@ public class OpenErpConnect {
         stringConn.append("id: " + mUserId + "\n");
         return stringConn.toString();
     }
-}
+    
+    /**
+     * As Java does not support output parameters; to control whether an Exception occurred in
+     * browse() method, we create this class, so the caller does not have to deal with so different
+     * kind of exceptions. Instead, it will be notified if one (any kind) occurred.<br>
+     * We can not assign the output parameter to null, because it is passed as a reference by value,
+     * so the changes to the reference itself outside the method will not be seen; we can just
+     * modify the object, not the memory position it is pointing.<br>
+     * The rest of methods just return null in case of Exception, because it is more agile, so you
+     * do not have to use try catch every time. However, if you wish, you can use this class
+     * with the rest of methods.
+     */
+    public static class OpenErpConnectException extends Exception {
+        
+        private static final String ERROR_READ = "read() method returned unexpected null value";
 
+        /** Required because Exception implements Serializable interface */
+        private static final long serialVersionUID = 1L;
+        
+        public OpenErpConnectException(String message) {
+            super(message);
+        }
+    }
+}
