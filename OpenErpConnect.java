@@ -90,9 +90,13 @@ public class OpenErpConnect {
     }
     
     protected static OpenErpConnect login(ContentValues connectionParams) {
-        return login(connectionParams.getAsString("server"), connectionParams.getAsInteger("port"),
-                connectionParams.getAsString("database"), connectionParams.getAsString("username"),
-                connectionParams.getAsString("password"));
+        return login(
+                connectionParams.getAsString("server"),
+                connectionParams.getAsInteger("port"),
+                connectionParams.getAsString("database"),
+                connectionParams.getAsString("username"),
+                connectionParams.getAsString("password")
+        );
     }
     
     protected static OpenErpConnect login(String server, Integer port, String db, String user, String pass) {
@@ -137,12 +141,12 @@ public class OpenErpConnect {
         return search(model, false, 0, 0, null, false, conditions);
     }
     
-    public Long[] search(String model, Boolean count, Object[] conditions) {
-        return search(model, false, 0, 0, null, false, conditions);
+    public Long[] search(String model, boolean count, Object[] conditions) {
+        return search(model, count, 0, 0, null, false, conditions);
     }
     
-    public Long[] search(String model, Boolean count, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
-        return search(model, false, 0, limit, order, reverseOrder, conditions);
+    public Long[] search(String model, boolean count, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
+        return search(model, count, 0, limit, order, reverseOrder, conditions);
     }
     
     /**
@@ -152,7 +156,7 @@ public class OpenErpConnect {
      * 
      * @return The ids of matching objects.
      * */
-    public Long[] search(String model, Boolean count, Integer offset, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
+    public Long[] search(String model, boolean count, Integer offset, Integer limit, String order, boolean reverseOrder, Object[] conditions) {
         Long[] result = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
