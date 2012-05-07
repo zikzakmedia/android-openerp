@@ -14,15 +14,19 @@ Here are some examples on how to use it, (for more information see the source an
 - If you want to know which is the actual type of an Object to cast it properly, you can use getClass() and getName() as:
 objectInstance.getClass().getName()
 - To cast an Object[] array into another type of array use the Arrays.copyOf() method, or you will probably get a ClassCastException
-- In case that an Exception occurred or there are no results, null is returned. So, if the returned object by OpenErpConnect is not null, it will
-contain, at less, one value. There is an exception for this with the methods that return a Boolean. In which case null is not returned,
-we use false instead for more "logical" reasons.
+- In case that an Exception occurred null is returned. There are two exceptions for this: methods that return a Boolean (in which case null is not returned, we use false instead for more "logical" reasons) and browse() method that throws OpenErpException, because Java does not support output parameters.
+- There exists a bug in OpenERP that returns the dictionaries of the read() method unordered. So, for those models in which we want them in a certain order we have to implement the Comparable interface int its Model class and order them.
+
+// Debugging:
+- A very good approach to debug is to check the value of the variable faultString in the file XMLRPCClient.java provided by the library this connector is based on. You can do this by putting a debug breakpoint at line ~350. This will show you the output of the OpenERP server with a possible error that otherwise would be hard to find.
+- Also, do not forget to check the logs in your OpenERP server!
 
 // Login:
 Connecting to the OpenERP server and getting a OpenErpConnect instance for successive calls.
 This does the login and stores the connection information into the instance, so you
-do not have to pass them every time:
-OpenErpConnect oc = OpenErpConnect.connect("localhost", 8051, "my_db", "username", "user_pass");
+do not have to pass it every time.
+Note that in most cases using "localhost" as the OpenERP server will not be correct, as you are not likely to be running an OpenERP server in your Android device (unless you are using the emulator on your computer):
+OpenErpConnect oc = OpenErpConnect.connect("openerp_server", port_number, "my_db", "username", "user_pass");
 
 // Create:
 HashMap<String, String> values = new HashMap<String, String>(); // If you need different types use HashMap<String, Object>
