@@ -25,7 +25,7 @@ objectInstance.getClass().getName()
 Connecting to the OpenERP server and getting a OpenErpConnect instance for successive calls.
 This does the login and stores the connection information into the instance, so you
 do not have to pass it every time.
-Note that in most cases using "localhost" as the OpenERP server will not be correct, as you are not likely to be running an OpenERP server in your Android device (unless you are using the emulator on your computer):
+Note that using "localhost" as the OpenERP server will not be correct, as you are not likely to be running an OpenERP server in your Android device or emulator:
 OpenErpConnect oc = OpenErpConnect.connect("openerp_server", port_number, "my_db", "username", "user_pass");
 
 // Create:
