@@ -25,7 +25,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
 
 import org.xmlrpc.android.XMLRPCClient;
 import org.xmlrpc.android.XMLRPCException;
@@ -36,14 +35,16 @@ import android.util.Log;
 /**
  * This class provides access to basic methods in OpenObject, so you can use
  * them from an Android device. The operations supported are: <br>
- * - login <br>
- * - create <br>
- * - search <br>
- * - read <br>
- * - write <br>
- * - unlink <br>
- * - browse <br>
- * - call (This is a generic method to call whatever you need) <br>
+ * <ul>
+ * <li>login</li>
+ * <li>create</li>
+ * <li>search</li>
+ * <li>read</li>
+ * <li>write</li>
+ * <li>unlink</li>
+ * <li>browse</li>
+ * <li>call (This is a generic method to call whatever you need)</li>
+ * </ul>
  * You can extend OpenErpConnect to implement more specific methods of your need.
  * 
  * @author Enric Caumons Gou <caumons@gmail.com>
@@ -160,7 +161,7 @@ public class OpenErpConnect {
         Long[] result = null;
         try {
             XMLRPCClient client = new XMLRPCClient(mUrl);
-            Vector<Object> parameters = new Vector<Object>(11);
+            List<Object> parameters = new ArrayList<Object>(11);
             parameters.add(mDatabase);
             parameters.add(mUserId);
             parameters.add(mPassword);
@@ -305,17 +306,17 @@ public class OpenErpConnect {
     public Object call(String model, String method, Object...parameters) {
         Object response = null;
         try {
-            Vector<Object> paramsVector = new Vector<Object>(6);
-            paramsVector.add(mDatabase);
-            paramsVector.add(mUserId);
-            paramsVector.add(mPassword);
-            paramsVector.add(model);
-            paramsVector.add(method);
+            List<Object> paramsList = new ArrayList<Object>(6);
+            paramsList.add(mDatabase);
+            paramsList.add(mUserId);
+            paramsList.add(mPassword);
+            paramsList.add(model);
+            paramsList.add(method);
             for (Object parameter : parameters) {
-                paramsVector.add(parameter);
+                paramsList.add(parameter);
             }
             XMLRPCClient client = new XMLRPCClient(mUrl);
-            response = client.call("execute", paramsVector);
+            response = client.call("execute", paramsList);
         } catch (XMLRPCException e) {
             Log.d(CONNECTOR_NAME, e.toString());
         }
